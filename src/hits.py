@@ -14,7 +14,7 @@ class HITS():
         epsilon_matrix = epsilon * (numpy.ones((self.__n,1)).all())
 
         while True:
-            hubs_old= self.__hubs
+            hubs_old = self.__hubs
 
             self.__auths = numpy.matmul(self.__link_matrix_tr, hubs_old)
             self.__auths = self.__auths / self.__auths.max(axis=0)
@@ -22,7 +22,7 @@ class HITS():
             self.__hubs = numpy.matmul(self.__link_matrix, self.__auths)
             self.__hubs = self.__hubs / self.__hubs.max(axis=0)
 
-            if ((abs(self.__hubs - hubs_old))< epsilon_matrix).all():
+            if ((abs(self.__hubs - hubs_old)) < epsilon_matrix).all():
                 break
 
     def get_hubs(self):
@@ -32,8 +32,8 @@ class HITS():
         return self.__auths
 
 def main():
-    a=[[0,1,1,1,0],[1,0,0,1,0],[0,0,0,0,1],[0,1,1,0,0],[0,0,0,0,0]]
-    b= numpy.array(a)
+    a =[[0,1,1,1,0], [1,0,0,1,0], [0,0,0,0,1], [0,1,1,0,0], [0,0,0,0,0]]
+    b = numpy.array(a)
     p = HITS(b)
     p.calc_scores()
     print(p.get_hubs())
