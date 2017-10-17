@@ -3,7 +3,7 @@ import scipy
 
 class HITS():
     def __init__(self, link_matrix):
-        self.__link_matrix = matrix
+        self.__link_matrix = link_matrix
         self.__link_matrix_tr = link_matrix.transpose()
         self.__n = self.__link_matrix.shape[0]
         self.__hubs = numpy.ones((self.__n,1))
@@ -35,9 +35,9 @@ def main():
     a=[[0,1,1,1,0],[1,0,0,1,0],[0,0,0,0,1],[0,1,1,0,0],[0,0,0,0,0]]
     b= numpy.array(a)
     p = HITS(b)
-    p.calcRank()
-    print(p.getHubs())
-    print(p.getAuth())
+    p.calc_scores()
+    print(p.get_hubs())
+    print(p.get_auths())
 
 if __name__ == '__main__':
 	main()
