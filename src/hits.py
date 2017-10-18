@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.sparse import csc_matrix
-from time import time
+import time
 
 class HITS():
     def __init__(self, link_matrix, use_sparse=True):
@@ -23,10 +23,14 @@ class HITS():
                 hubs_old = self.__hubs
 
                 self.__auths = self.__link_matrix_tr * hubs_old
-                self.__auths = self.__auths / self.__auths.max(axis=0)
+                max_score = self.__auths.max(axis=0)
+                if max_score != 0:
+                    self.__auths = self.__auths / max_score
 
                 self.__hubs = self.__link_matrix * self.__auths
-                self.__hubs = self.__hubs / self.__hubs.max(axis=0)
+                max_score = self.__hubs.max(axis=0)
+                if max_score != 0:
+                    self.__hubs = self.__hubs / max_score
 
                 if ((abs(self.__hubs - hubs_old)) < epsilon_matrix).all():
                     break
@@ -35,10 +39,14 @@ class HITS():
                 hubs_old = self.__hubs
 
                 self.__auths = np.matmul(self.__link_matrix_tr, hubs_old)
-                self.__auths = self.__auths / self.__auths.max(axis=0)
+                max_score = self.__auths.max(axis=0)
+                if max_score != 0:
+                    self.__auths = self.__auths / max_score
 
                 self.__hubs = np.matmul(self.__link_matrix, self.__auths)
-                self.__hubs = self.__hubs / self.__hubs.max(axis=0)
+                max_score = self.__hubs.max(axis=0)
+                if max_score != 0:
+                    self.__hubs = self.__hubs / max_score
 
                 if ((abs(self.__hubs - hubs_old)) < epsilon_matrix).all():
                     break
@@ -51,7 +59,7 @@ class HITS():
 
 def gen_sample_input(size):
     def func(i):
-        if i < 0.5:
+        if True:
             return 0
         else:
             return 1
@@ -62,14 +70,16 @@ def gen_sample_input(size):
 
 def main():
     
-    start = time()
+    start = time.time()
     link_matrix = gen_sample_input(10000)
-    print(time() - start)
-    
-    start = time()
-    h = HITS(link_matrix, use_sparse=False)
+    print(time.time() - start)
+
+    time.sleep(10)
+
+    start = time.time()
+    h = HITS(link_matrix, use_sparse=True)
     h.calc_scores()
-    print(time() - start)
+    print(time.time() - start)
 
 if __name__ == '__main__':
     main()
