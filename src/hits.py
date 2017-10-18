@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.sparse import csc_matrix
+from time import time
 
 class HITS():
     def __init__(self, link_matrix, use_sparse=True):
@@ -48,12 +49,27 @@ class HITS():
     def get_auths(self):
         return self.__auths
 
+def gen_sample_input(size):
+    def func(i):
+        if i < 0.5:
+            return 0
+        else:
+            return 1
+    a = np.random.rand(size, size)
+    vfunc = np.vectorize(func)
+    #return [[0,1,1,1,0], [1,0,0,1,0], [0,0,0,0,1], [0,1,1,0,0], [0,0,0,0,0]]
+    return vfunc(a)
+
 def main():
-    a =[[0,1,1,1,0], [1,0,0,1,0], [0,0,0,0,1], [0,1,1,0,0], [0,0,0,0,0]]
-    p = HITS(a, use_sparse=True)
-    p.calc_scores()
-    print(p.get_hubs())
-    print(p.get_auths())
+    
+    start = time()
+    link_matrix = gen_sample_input(10000)
+    print(time() - start)
+    
+    start = time()
+    h = HITS(link_matrix, use_sparse=False)
+    h.calc_scores()
+    print(time() - start)
 
 if __name__ == '__main__':
     main()
