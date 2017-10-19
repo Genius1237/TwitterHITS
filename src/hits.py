@@ -59,7 +59,7 @@ class HITS():
 
 def gen_sample_input(size):
     def func(i):
-        if True:
+        if i < 0.5:
             return 0
         else:
             return 1
