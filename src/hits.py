@@ -4,7 +4,6 @@ import time
 import pickle
 
 debug = True
-np.set_printoptions(threshold=np.inf)
 
 class HITS():
     def __init__(self, link_matrix, is_sparse=True):
@@ -101,6 +100,7 @@ def main():
     link_matrix = r.read_link_matrix(link_matrix_path, is_sparse=True)
 
     if debug:
+        np.set_printoptions(threshold=np.inf)
         print('users\n', users, '\n')
         print('map\n', index_id_map, '\n')
         print('link_matrix\n', link_matrix.todense(), '\n')

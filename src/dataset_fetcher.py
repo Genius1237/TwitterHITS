@@ -7,8 +7,6 @@ import scipy.sparse as sparse
 
 debug = True
 
-np.set_printoptions(threshold=np.inf)
-
 class DatasetFetcher():
     def __init__(self, key, secret):
         auth = tweepy.AppAuthHandler(key, secret)
@@ -59,6 +57,7 @@ class DatasetFetcher():
         while limited_var_val < limit and not boundary.empty():
             user_id = boundary.get()
             if debug:
+                np.set_printoptions(threshold=np.inf)
                 print('\nselected: ', self._visited[user_id]['screen_name'])
 
             rate_limit_info = self._api.rate_limit_status()['resources']['friends']['/friends/list']
