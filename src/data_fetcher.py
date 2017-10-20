@@ -7,14 +7,16 @@ import scipy.sparse as sparse
 
 debug = True
 
+np.set_printoptions(threshold=np.inf)
+
 class DatasetFetcher():
     def __init__(self, key, secret):
         auth = tweepy.AppAuthHandler(key, secret)
         self._api = tweepy.API(auth)
 
-    def get_dataset(self, seed_user, num_users, limit_on='explored'):
+    def get_dataset(self, seed_user, limit, limit_on='explored'):
         """\
-            seed_user is the id of screen_name of name
+            seed_user is the id/screen_name/name
             of the user to start the bfs with
             limit_on can be either explored or visited
         """
@@ -54,7 +56,7 @@ class DatasetFetcher():
 
         # get the graph
         limited_var_val = 0
-        while limited_var_val < num_users and not boundary.empty():
+        while limited_var_val < limit and not boundary.empty():
             user_id = boundary.get()
             if debug:
                 print('\nselected: ', self._visited[user_id]['screen_name'])
@@ -116,33 +118,37 @@ class DatasetFetcher():
         self._link_matrix = np.zeros((len(self._visited), len(self._visited)), dtype=np.int)
 
         # create map to save some time
-        self._id_index_map = {}
+        id_index_map = {}
         index = 0
         for user_id in graph:
-            self._id_index_map[user_id] = index
+            id_index_map[user_id] = index
             index += 1
 
         for user_id in graph:
             for friend_id in graph[user_id]['friends']:
-                self._link_matrix[self._id_index_map[user_id], self._id_index_map[friend_id]] = 1
+                self._link_matrix[id_index_map[user_id], id_index_map[friend_id]] = 1
             for follower_id in graph[user_id]['followers']:
-                self._link_matrix[self._id_index_map[follower_id], self._id_index_map[user_id]] = 1
+                self._link_matrix[id_index_map[follower_id], id_index_map[user_id]] = 1
 
-    def save_dataset(self, users_path, map_path, link_matrix_path, rep='sparse'):
+        self._index_id_map = {}
+        for i in id_index_map:
+            self._index_id_map[id_index_map[i]] = i
+
+    def save_dataset(self, users_path, map_path, link_matrix_path, use_sparse=True):
         with open(users_path, mode='wb') as f:
             pickle.dump(self._visited, f)
             if debug:
                 print('\nusers\n', self._visited, '\n')
 
         with open(map_path, mode='wb') as f:
-            pickle.dump(self._id_index_map, f)
+            pickle.dump(self._index_id_map, f)
             if debug:
-                print('map\n', self._id_index_map, '\n')
+                print('map\n', self._index_id_map, '\n')
 
         with open(link_matrix_path, mode='wb') as f:
             if debug:
                 print('link_matrix\n', self._link_matrix, '\n')
-            if rep == 'sparse':
+            if use_sparse:
                 sparse.save_npz(f, sparse.csr_matrix(self._link_matrix))
             else:
                 np.save(f, self._link_matrix)
@@ -154,4 +160,7 @@ if __name__ == '__main__':
 
     app = DatasetFetcher(key, secret)
     app.get_dataset(seed_user, 3, limit_on='explored')
-    app.save_dataset('users', 'map', 'link_matrix', rep='sparse')
+    users_path = '../data/users'
+    map_path = '../data/map'
+    link_matrix_path = '../data/link_matrix'
+    app.save_dataset(users_path, map_path, link_matrix_path, use_sparse=True)

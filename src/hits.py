@@ -4,6 +4,7 @@ import time
 import pickle
 
 debug = True
+np.set_printoptions(threshold=np.inf)
 
 class HITS():
     def __init__(self, link_matrix, is_sparse=True):
@@ -68,8 +69,8 @@ class DatasetReader():
     
     def read_map(self, map_path):
         with open(map_path, mode='rb') as f:
-            id_index_map = pickle.load(f)
-        return id_index_map
+            index_id_map = pickle.load(f)
+        return index_id_map
     
     def read_link_matrix(self, link_matrix_path, is_sparse=True):
         with open(link_matrix_path, mode='rb') as f:
@@ -92,16 +93,16 @@ class DatasetReader():
 
 def main():
     r = DatasetReader()
-    users_path = 'users'
-    map_path = 'map'
-    link_matrix_path = 'link_matrix'
+    users_path = '../data/users'
+    map_path = '../data/map'
+    link_matrix_path = '../data/link_matrix'
     users = r.read_users(users_path)
-    id_index_map = r.read_map(map_path)
+    index_id_map = r.read_map(map_path)
     link_matrix = r.read_link_matrix(link_matrix_path, is_sparse=True)
 
     if debug:
         print('users\n', users, '\n')
-        print('map\n', id_index_map, '\n')
+        print('map\n', index_id_map, '\n')
         print('link_matrix\n', link_matrix.todense(), '\n')
 
     h = HITS(link_matrix, is_sparse=True)
