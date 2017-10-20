@@ -6,7 +6,7 @@ import pickle
 debug = True
 
 class HITS():
-    def __init__(self, link_matrix, is_sparse=True):
+    def __init__(self, link_matrix, is_sparse=False):
         self.__is_sparse = is_sparse
         self.__link_matrix = link_matrix
         self.__link_matrix_tr = self.__link_matrix.transpose()
@@ -71,7 +71,7 @@ class DatasetReader():
             index_id_map = pickle.load(f)
         return index_id_map
     
-    def read_link_matrix(self, link_matrix_path, is_sparse=True):
+    def read_link_matrix(self, link_matrix_path, is_sparse=False):
         with open(link_matrix_path, mode='rb') as f:
             if is_sparse:
                 link_matrix = sparse.load_npz(link_matrix_path)
@@ -97,7 +97,7 @@ def main():
     link_matrix_path = '../data/link_matrix'
     users = r.read_users(users_path)
     index_id_map = r.read_map(map_path)
-    link_matrix = r.read_link_matrix(link_matrix_path, is_sparse=True)
+    link_matrix = r.read_link_matrix(link_matrix_path, is_sparse=False)
 
     if debug:
         np.set_printoptions(threshold=np.inf)
@@ -105,7 +105,7 @@ def main():
         print('map\n', index_id_map, '\n')
         print('link_matrix\n', link_matrix.todense(), '\n')
 
-    h = HITS(link_matrix, is_sparse=True)
+    h = HITS(link_matrix, is_sparse=False)
     h.calc_scores()
     print(h.get_auths())
     print(h.get_hubs())

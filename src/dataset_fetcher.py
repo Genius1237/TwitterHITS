@@ -133,7 +133,7 @@ class DatasetFetcher():
         for i in id_index_map:
             self._index_id_map[id_index_map[i]] = i
 
-    def save_dataset(self, users_path, map_path, link_matrix_path, use_sparse=True):
+    def save_dataset(self, users_path, map_path, link_matrix_path, use_sparse=False):
         with open(users_path, mode='wb') as f:
             pickle.dump(self._visited, f)
             if debug:
@@ -162,4 +162,4 @@ if __name__ == '__main__':
     users_path = '../data/users'
     map_path = '../data/map'
     link_matrix_path = '../data/link_matrix'
-    app.save_dataset(users_path, map_path, link_matrix_path, use_sparse=True)
+    app.save_dataset(users_path, map_path, link_matrix_path, use_sparse=False)
