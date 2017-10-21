@@ -4,7 +4,7 @@ import time
 import pickle
 from igraph import *
 
-debug = True
+debug = False
 
 class HITS():
     def __init__(self, link_matrix,users,index_id_map,is_sparse=False):
@@ -141,9 +141,9 @@ def main():
 
     if debug:
         np.set_printoptions(threshold=np.inf)
-        #print('users\n', users, '\n')
-        #print('map\n', index_id_map, '\n')
-        #print('link_matrix\n', link_matrix.todense(), '\n')
+        print('users\n', users, '\n')
+        print('map\n', index_id_map, '\n')
+        print('link_matrix\n', link_matrix.todense(), '\n')
 
     h = HITS(link_matrix,users,index_id_map,is_sparse=False)
     h.calc_scores()

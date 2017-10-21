@@ -5,7 +5,7 @@ import pickle
 import numpy as np
 import scipy.sparse as sparse
 
-debug = True
+debug = False
 
 class DatasetFetcher():
     def __init__(self, key, secret):
@@ -57,7 +57,6 @@ class DatasetFetcher():
         while limited_var_val < limit and not boundary.empty():
             user_id = boundary.get()
             if debug:
-                np.set_printoptions(threshold=np.inf)
                 print('\nselected: ', self._visited[user_id]['screen_name'])
 
             rate_limit_info = self._api.rate_limit_status()['resources']['friends']['/friends/list']
@@ -152,7 +151,10 @@ class DatasetFetcher():
             else:
                 np.save(f, self._link_matrix)
 
-if __name__ == '__main__':
+def main():
+    if debug == True:
+        np.set_printoptions(threshold=np.inf)
+    np.set_printoptions(threshold=np.inf)
     key = "j5idDIRvUfwI1213Nr14Drh33"
     secret = "jOw1Dgt8dJlu4rPh3GeoGofnIV5VKLkZ8fOQqYk1zUsaSMJnVl"
     seed_user = 'n1khl'
@@ -163,3 +165,6 @@ if __name__ == '__main__':
     map_path = '../data/map'
     link_matrix_path = '../data/link_matrix'
     app.save_dataset(users_path, map_path, link_matrix_path, use_sparse=False)
+
+if __name__ == '__main__':
+    main()
