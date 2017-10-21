@@ -53,7 +53,7 @@ class HITS():
                 if max_score != 0:
                     self.__hubs = self.__hubs / max_score
 
-                #self.plot_graph(self.__hubs,self.__adj_graph,self.__names)
+                self.plot_graph(self.__hubs,self.__adj_graph,self.__names)
 
                 if ((abs(self.__hubs - hubs_old)) < epsilon_matrix).all():
                     break
@@ -69,7 +69,7 @@ class HITS():
 
     def get_sample_adj_matrix(self):
         sample_matrix = self.__adj_graph[0:self.__size, 0:self.__size]
-        return Graph.Adjacency((sample_matrix>0).tolist())
+        return Graph.Adjacency(sample_matrix)
 
     def plot_graph(self,x,g,names):
 
@@ -152,7 +152,7 @@ def main():
     x = h.get_hubs()
     y = h.get_sample_adj_matrix()
     z = h.get_names()
-    h.plot_graph(x,y,z)
+    #h.plot_graph(x,y,z)
 
 if __name__ == '__main__':
     main()
