@@ -53,7 +53,8 @@ class HITS():
                 if max_score != 0:
                     self.__hubs = self.__hubs / max_score
 
-                self.plot_graph(self.__hubs,self.__adj_graph,self.__names)
+                self.plot_graph(self.__hubs,self.__adj_graph,self.__names,0)
+                self.plot_graph(self.__auths,self.__adj_graph,self.__names,1)
 
                 if ((abs(self.__hubs - hubs_old)) < epsilon_matrix).all():
                     break
@@ -71,7 +72,7 @@ class HITS():
         sample_matrix = self.__adj_graph[0:self.__size, 0:self.__size]
         return Graph.Adjacency(sample_matrix)
 
-    def plot_graph(self,x,g,names):
+    def plot_graph(self,x,g,names,c):
 
         g.vs["name"] = names
         g.vs["attr"] = ["%.3f" % k for k in x]
@@ -85,8 +86,10 @@ class HITS():
         ###layout###
         layout = g.layout("kk")
         visual_style = {}
-        visual_style["vertex_size"] = [(x[i]/array_min)*0.3 if x[i]>=0.001 else 10 for i in range(0,min(30,len(x)))]
-        visual_style["vertex_label"] = [(g.vs["name"][i],float(g.vs["attr"][i])) for i in range(0,30)]
+        visual_style["vertex_size"] = [(x[i]/array_min)*0.3 if x[i]>=0.001 else 10 for i in range(0,min(self.__size,len(x)))]
+        visual_style["vertex_label"] = [(g.vs["name"][i],float(g.vs["attr"][i])) for i in range(0,min(self.__size,len(x)))]
+        color_dict = {"0":"red" , "1":"yellow"}
+        g.vs["color"] = color_dict[str(c)]
         visual_style["edge_arrow_size"]=2
         visual_style["vertex_label_size"]=35
         visual_style["layout"] = layout
