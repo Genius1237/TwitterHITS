@@ -3,6 +3,7 @@ import scipy.sparse as sparse
 import time
 import pickle
 from igraph import *
+from dataset_fetcher import ListToMatrixConverter
 
 debug = False
 
@@ -133,14 +134,16 @@ class DatasetReader():
         return vfunc(a)
 
 def main():
+    sparse = False
 
-    r = DatasetReader()
     users_path = '../data/users'
     map_path = '../data/map'
     link_matrix_path = '../data/link_matrix'
+
+    r = DatasetReader()
     users = r.read_users(users_path)
     index_id_map = r.read_map(map_path)
-    link_matrix = r.read_link_matrix(link_matrix_path, is_sparse=False)
+    link_matrix = r.read_link_matrix(link_matrix_path, is_sparse=sparse)
 
     if debug:
         np.set_printoptions(threshold=np.inf)
@@ -148,7 +151,7 @@ def main():
         print('map\n', index_id_map, '\n')
         print('link_matrix\n', link_matrix.todense(), '\n')
 
-    h = HITS(link_matrix,users,index_id_map,is_sparse=False)
+    h = HITS(link_matrix,users,index_id_map,is_sparse=sparse)
     h.calc_scores()
     print(h.get_auths())
     print(h.get_hubs())
