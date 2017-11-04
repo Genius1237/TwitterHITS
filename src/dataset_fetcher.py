@@ -67,7 +67,7 @@ class DatasetFetcher():
 					time.sleep(max(reset_time - time.time() + 1, 1))
 
 
-	def get_dataset(self, seed_user, friends_limit, followers_limit, limit_on, limit, live_save, users_path, adj_list_path):
+	def get_dataset(self, seed_user, friends_limit, followers_limit, limit, live_save, users_path, adj_list_path):
 		"""\
 			seed_user is the id/screen_name/name
 			of the user to start the bfs with
@@ -114,9 +114,9 @@ class DatasetFetcher():
 		boundary.put(seed_user.id)
 
 		# get the graph
-		limited_var_val = 0
+		should_break = False
 		live_save_suffix = 0
-		while limited_var_val < limit and not boundary.empty():
+		while True:
 			self._logger.log('')
 			self._print_api_rem()
 			user_id = boundary.get()
@@ -137,8 +137,15 @@ class DatasetFetcher():
 						'followers': []
 					}
 					boundary.put(friend.id)
+					self._logger.log('Length of visited:', len(self._visited))
+					if len(self._visited) >= limit:
+						should_break = True
+						break
 				self._graph[user_id]['friends'].append(friend.id)
 			self._logger.log('Found', cnt, 'friends')
+
+			if should_break:
+				break
 
 			# followers
 			self._logger.log('Finding followers..')
@@ -155,18 +162,53 @@ class DatasetFetcher():
 						'followers': []
 					}
 					boundary.put(follower.id)
+					self._logger.log('Length of visited:', len(self._visited))
+					if len(self._visited) >= limit:
+						should_break = True
+						break
 				self._graph[user_id]['followers'].append(follower.id)
 			self._logger.log('Found', cnt, 'followers')
-
-			if limit_on == 'explored':
-				limited_var_val = len(self._visited) - boundary.qsize()
-			else:
-				limited_var_val = len(self._visited)
 
 			self._logger.log('Latest save suffix: ', live_save_suffix % 2)
 			if live_save:
 				self.save_dataset(users_path + str(live_save_suffix % 2), adj_list_path + str(live_save_suffix % 2))
 			live_save_suffix += 1
+
+			if should_break:
+				break
+			
+		self._logger.log('')
+		self._logger.log('Boundary..')
+		while not boundary.empty():
+			self._logger.log('')
+			self._print_api_rem()
+			user_id = boundary.get()
+			self._logger.log('Selected:', self._visited[user_id]['screen_name'])
+
+			# friends
+			self._logger.log('Finding friends..')
+			cnt = 0
+			for friend in self._handle_limit(tweepy.Cursor(self._api.friends, user_id=user_id).items(friends_limit), 'friends'):
+				cnt += 1
+				if friend.id in self._visited:
+					self._graph[user_id]['friends'].append(friend.id)
+			self._logger.log('Found', cnt, 'friends')
+
+			# followers
+			self._logger.log('Finding followers..')
+			cnt = 0
+			for follower in self._handle_limit(tweepy.Cursor(self._api.followers, user_id=user_id).items(followers_limit), 'followers'):
+				cnt += 1
+				if follower.id in self._visited:
+					self._graph[user_id]['followers'].append(follower.id)
+			self._logger.log('Found', cnt, 'followers')
+
+			self._logger.log('Latest save suffix: ', live_save_suffix % 2)
+			if live_save:
+				self.save_dataset(users_path + str(live_save_suffix % 2), adj_list_path + str(live_save_suffix % 2))
+			live_save_suffix += 1
+
+			self._logger.log('Queue size:', boundary.qsize())
 
 	def save_dataset(self, users_path, adj_list_path):
 		if users_path != '':
@@ -243,7 +285,7 @@ def main():
 
 	app = DatasetFetcher(key, secret, logger)
 	logger.log('Obtaining dataset..')
-	app.get_dataset(seed_user, friends_limit, followers_limit, 'explored', limit, True, users_temp_path, adj_list_temp_path)
+	app.get_dataset(seed_user, friends_limit, followers_limit, limit, True, users_temp_path, adj_list_temp_path)
 	logger.log('Dataset obtained')
 	app.save_dataset(users_path, adj_list_path)
 
