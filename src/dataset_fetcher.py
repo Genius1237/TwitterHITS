@@ -5,21 +5,26 @@ import pickle
 import numpy as np
 import scipy.sparse as sparse
 from datetime import datetime as dt
+import sys
 
 log = True
 
 class Logger():
-	def __init__(self, log_path, print_stdout, sep=' ', end='\n'):
+	def __init__(self, log_path, print_stdout=True, sep=' ', end='\n'):
 		self._log_file = open(log_path, 'w')
 		self._print_stdout = print_stdout
 		self._sep = sep
 		self._end = end
 
 	def log(self, *args):
-		args = self._sep.join(args)
-		self._log_file.write(args + self._end)
+		to_print = str(dt.now()) + ': '
+		for i in args:
+			to_print += self._sep + str(i)
+		self._log_file.write(to_print + self._end)
+		self._log_file.flush()
 		if self._print_stdout:
-			print(args, sep=self._sep, end=self._end)
+			print(to_print, end=self._end)
+			sys.stdout.flush()
 
 	def __del__(self):
 		self._log_file.close()
@@ -27,7 +32,7 @@ class Logger():
 class DatasetFetcher():
 	def __init__(self, key, secret, logger):
 		auth = tweepy.AppAuthHandler(key, secret)
-		self._api = tweepy.API(auth)
+		self._api = tweepy.API(auth, retry_count=5)
 		self._visited = None
 		self._graph = None
 		self._logger = logger
@@ -36,12 +41,12 @@ class DatasetFetcher():
 		try:
 			temp = self._api.rate_limit_status()
 		except tweepy.RateLimitError:
-			self._logger.log(dt.now(), 'Rate limit API limit reached')
+			self._logger.log('Rate limit API limit reached')
 		except Exception as e:
-			self._logger.log(dt.now(), 'API limit exception: ', e)
+			self._logger.log('API limit exception: ', e)
 		else:
-			self._logger.log(dt.now(), 'Friends endpoint remaining: ', temp['resources']['friends']['/friends/list']['remaining'])
-			self._logger.log(dt.now(), 'Followers endpoint remaining: ', temp['resources']['followers']['/followers/list']['remaining'])
+			self._logger.log('Friends endpoint remaining: ', temp['resources']['friends']['/friends/list']['remaining'])
+			self._logger.log('Followers endpoint remaining: ', temp['resources']['followers']['/followers/list']['remaining'])
 
 	def _handle_limit(self, cursor, friends_or_followers):
 		while True:
@@ -51,14 +56,14 @@ class DatasetFetcher():
 				try:
 					reset_time = self._api.rate_limit_status()['resources'][friends_or_followers]['/' + friends_or_followers + '/list']['reset']
 				except tweepy.RateLimitError:
-					self._logger.log(dt.now(), 'Sleeping for', 15 * 60, 'seconds')
+					self._logger.log('Sleeping for', 15 * 60, 'seconds')
 					time.sleep(15 * 60)
 				except Exception as e:
-					self._logger.log(dt.now(), 'Unexpected exception thrown: ', e)
-					self._logger.log(dt.now(), 'Sleeping for', 15 * 60, 'seconds')
+					self._logger.log('Unexpected exception thrown: ', e)
+					self._logger.log('Sleeping for', 15 * 60, 'seconds')
 					time.sleep(15 * 60)
 				else:
-					self._logger.log(dt.now(), 'Sleeping for', max(reset_time - time.time() + 1, 1), 'seconds')
+					self._logger.log('Sleeping for', max(reset_time - time.time() + 1, 1), 'seconds')
 					time.sleep(max(reset_time - time.time() + 1, 1))
 
 
@@ -112,13 +117,13 @@ class DatasetFetcher():
 		limited_var_val = 0
 		live_save_suffix = 0
 		while limited_var_val < limit and not boundary.empty():
-			self._logger.log()
+			self._logger.log('')
 			self._print_api_rem()
 			user_id = boundary.get()
-			self._logger.log(dt.now(), 'Selected:', self._visited[user_id]['screen_name'])
+			self._logger.log('Selected:', self._visited[user_id]['screen_name'])
 
 			# friends
-			self._logger.log(dt.now(), 'Finding friends..')
+			self._logger.log('Finding friends..')
 			cnt = 0
 			for friend in self._handle_limit(tweepy.Cursor(self._api.friends, user_id=user_id).items(friends_limit), 'friends'):
 				cnt += 1
@@ -133,10 +138,10 @@ class DatasetFetcher():
 					}
 					boundary.put(friend.id)
 				self._graph[user_id]['friends'].append(friend.id)
-			self._logger.log(dt.now(), 'Found', cnt, 'friends')
+			self._logger.log('Found', cnt, 'friends')
 
 			# followers
-			self._logger.log(dt.now(), 'Finding followers..')
+			self._logger.log('Finding followers..')
 			cnt = 0
 			for follower in self._handle_limit(tweepy.Cursor(self._api.followers, user_id=user_id).items(followers_limit), 'followers'):
 				cnt += 1
@@ -151,14 +156,14 @@ class DatasetFetcher():
 					}
 					boundary.put(follower.id)
 				self._graph[user_id]['followers'].append(follower.id)
-			self._logger.log(dt.now(), 'Found', cnt, 'followers')
+			self._logger.log('Found', cnt, 'followers')
 
 			if limit_on == 'explored':
 				limited_var_val = len(self._visited) - boundary.qsize()
 			else:
 				limited_var_val = len(self._visited)
 
-			self._logger.log(dt.now(), 'Latest save suffix: ', live_save_suffix % 2)
+			self._logger.log('Latest save suffix: ', live_save_suffix % 2)
 			if live_save:
 				self.save_dataset(users_path + str(live_save_suffix % 2), adj_list_path + str(live_save_suffix % 2))
 			live_save_suffix += 1
@@ -237,9 +242,9 @@ def main():
 	logger = Logger(log_path)
 
 	app = DatasetFetcher(key, secret, logger)
-	logger.log(dt.now(), 'Obtaining dataset..')
+	logger.log('Obtaining dataset..')
 	app.get_dataset(seed_user, friends_limit, followers_limit, 'explored', limit, True, users_temp_path, adj_list_temp_path)
-	logger.log(dt.now(), 'Dataset obtained!')
+	logger.log('Dataset obtained')
 	app.save_dataset(users_path, adj_list_path)
 
 	# adjacency list created by dataset fetcher is used to generate the link matrix
@@ -247,7 +252,7 @@ def main():
 	c = ListToMatrixConverter(adj_list_path)
 	c.convert()
 	c.save(map_path, link_matrix_path, use_sparse=sparse)
-	logger.log(dt.now(), 'Dataset obtained')
+	logger.log('Dataset Saved')
 
 if __name__ == '__main__':
 	main()
