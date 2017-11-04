@@ -1,3 +1,4 @@
 env
 src/temp.py
 src/logs.txt
+src/__pycache__
