@@ -1,33 +1,3 @@
-import pickle
-import numpy as np
-
-np.set_printoptions(threshold=np.nan)
-
-with open('users', 'rb') as f:
-	users = pickle.load(f)
-
-with open('map', 'rb') as f:
-	mapp = pickle.load(f)
-
-with open('adj_list', 'rb') as f:
-	adj_list = pickle.load(f)
-
-with open('link_matrix', 'rb') as f:
-	link_matrix = np.load(f)
-
-print('------------------------ users ------------------------')
-print(len(users))
-print(users)
-
-print('------------------------ map ------------------------')
-print(len(mapp))
-print(mapp)
-
-print('------------------------ adj_list ------------------------')
-print(len(adj_list))
-print(adj_list)
-
-print('------------------------ link_matrix ------------------------')
-print(link_matrix.shape)
-print(link_matrix)
-
+a = {1341258673: {'followers': [], 'friends': []}, 426702947: {'followers': [], 'friends': []}, 29873662: {'followers': [], 'friends': []}, 1260103014: {'followers': [966500558], 'friends': [29873662, 966500558]}, 592703121: {'followers': [], 'friends': []}, 1027372476: {'followers': [], 'friends': []}, 59023203: {'followers': [], 'friends': []}, 5669692: {'followers': [], 'friends': []}, 966500558: {'followers': [], 'friends': [426702947, 1260103014, 1341258673, 59023203, 29873662, 251514101, 5669692, 1027372476, 592703121]}, 251514101: {'followers': [], 'friends': []}}
+b = {1341258673: {'friends': [], 'followers': []}, 426702947: {'friends': [], 'followers': []}, 966500558: {'friends': [426702947, 1260103014, 1341258673, 59023203, 29873662, 251514101, 5669692, 1027372476, 592703121], 'followers': []}, 1260103014: {'friends': [29873662, 966500558], 'followers': [966500558]}, 592703121: {'friends': [], 'followers': []}, 5669692: {'friends': [], 'followers': []}, 59023203: {'friends': [], 'followers': []}, 1027372476: {'friends': [], 'followers': []}, 29873662: {'friends': [], 'followers': []}, 251514101: {'friends': [], 'followers': []}}
+print(a == b)

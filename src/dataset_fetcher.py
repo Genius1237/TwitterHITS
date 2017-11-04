@@ -80,8 +80,6 @@ class DatasetFetcher():
 
 			limit is the limit corresponding to limit_on
 		"""
-
-		self._print_api_rem()
 		# three possible states -
 		# unvisited, visited but not explored, explored
 
@@ -120,13 +118,14 @@ class DatasetFetcher():
 			self._logger.log('')
 			self._print_api_rem()
 			user_id = boundary.get()
-			self._logger.log('Selected:', self._visited[user_id]['screen_name'])
+			self._logger.log('Selected:', self._visited[user_id]['screen_name'], ',', self._visited[user_id]['name'], ',', user_id)
 
 			# friends
 			self._logger.log('Finding friends..')
 			cnt = 0
 			for friend in self._handle_limit(tweepy.Cursor(self._api.friends, user_id=user_id).items(friends_limit), 'friends'):
 				cnt += 1
+				self._graph[user_id]['friends'].append(friend.id)
 				if friend.id not in self._visited:
 					self._visited[friend.id] = {
 						'name': friend.name,
@@ -137,11 +136,9 @@ class DatasetFetcher():
 						'followers': []
 					}
 					boundary.put(friend.id)
-					self._logger.log('Length of visited:', len(self._visited))
 					if len(self._visited) >= limit:
 						should_break = True
 						break
-				self._graph[user_id]['friends'].append(friend.id)
 			self._logger.log('Found', cnt, 'friends')
 
 			if should_break:
@@ -152,6 +149,7 @@ class DatasetFetcher():
 			cnt = 0
 			for follower in self._handle_limit(tweepy.Cursor(self._api.followers, user_id=user_id).items(followers_limit), 'followers'):
 				cnt += 1
+				self._graph[user_id]['followers'].append(follower.id)
 				if follower.id not in self._visited:
 					self._visited[follower.id] = {
 						'name': follower.name,
@@ -162,11 +160,9 @@ class DatasetFetcher():
 						'followers': []
 					}
 					boundary.put(follower.id)
-					self._logger.log('Length of visited:', len(self._visited))
 					if len(self._visited) >= limit:
 						should_break = True
 						break
-				self._graph[user_id]['followers'].append(follower.id)
 			self._logger.log('Found', cnt, 'followers')
 
 			self._logger.log('Latest save suffix: ', live_save_suffix % 2)
@@ -183,25 +179,31 @@ class DatasetFetcher():
 			self._logger.log('')
 			self._print_api_rem()
 			user_id = boundary.get()
-			self._logger.log('Selected:', self._visited[user_id]['screen_name'])
+			self._logger.log('Selected:', self._visited[user_id]['screen_name'], ',', self._visited[user_id]['name'], ',', user_id)
 
 			# friends
 			self._logger.log('Finding friends..')
 			cnt = 0
+			cnt2 = 0
 			for friend in self._handle_limit(tweepy.Cursor(self._api.friends, user_id=user_id).items(friends_limit), 'friends'):
 				cnt += 1
 				if friend.id in self._visited:
+					cnt2 += 1
 					self._graph[user_id]['friends'].append(friend.id)
 			self._logger.log('Found', cnt, 'friends')
+			self._logger.log('Used', cnt2, 'friends')
 
 			# followers
 			self._logger.log('Finding followers..')
 			cnt = 0
+			cnt2 = 0
 			for follower in self._handle_limit(tweepy.Cursor(self._api.followers, user_id=user_id).items(followers_limit), 'followers'):
 				cnt += 1
 				if follower.id in self._visited:
+					cnt2 += 1
 					self._graph[user_id]['followers'].append(follower.id)
 			self._logger.log('Found', cnt, 'followers')
+			self._logger.log('Used', cnt2, 'followers')
 
 			self._logger.log('Latest save suffix: ', live_save_suffix % 2)
 			if live_save:
@@ -277,8 +279,8 @@ def main():
 	users_temp_path = '../data/temp/users_'
 	adj_list_temp_path = '../data/temp/adj_list_'
 
-	friends_limit = 200
-	followers_limit = 200
+	friends_limit = 20
+	followers_limit = 20
 	limit = 10
 
 	logger = Logger(log_path)
