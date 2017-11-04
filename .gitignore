@@ -1,1 +1,4 @@
 env
+src/temp.py
+src/logs.txt
+.gitignore
