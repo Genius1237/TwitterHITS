@@ -221,7 +221,7 @@ class DatasetFetcher():
 				try:
 					pickle.dump(self._visited, f)
 				except Exception as e:
-					self._logger.log('adj Exception:', repr(e))
+					self._logger.log('adjException:', repr(e))
 
 		if adj_list_path != '':
 			with open(adj_list_path, mode='wb') as f:
@@ -282,11 +282,11 @@ class ListToMatrixConverter():
 
 
 def main():
-	sparse = True
+	sparse = False
 
 	key = 'j5idDIRvUfwI1213Nr14Drh33'
 	secret = 'jOw1Dgt8dJlu4rPh3GeoGofnIV5VKLkZ8fOQqYk1zUsaSMJnVl'
-	seed_user = 'janasmart19'
+	seed_user = 'Genius1238'
 
 	log_path = 'logs.txt'
 
