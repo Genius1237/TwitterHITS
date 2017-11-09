@@ -9,7 +9,8 @@ import sys
 
 class Logger():
 	def __init__(self, log_path, print_stdout=True, sep=' ', end='\n'):
-		"""
+		"""Initializes an instance of Logger
+
 		Args:
 			log_path: Path to the file to write the logs to
 			print_stdout: True if the logs must be written to stdout
@@ -48,7 +49,7 @@ class Logger():
 
 class DatasetFetcher():
 	def __init__(self, key, secret, logger):
-		"""Complete authentication
+		"""Initializes an instance of DatasetFetcher
 
 		Args:
 			key: key to be used for authentication
@@ -288,7 +289,7 @@ class DatasetFetcher():
 
 class ListToMatrixConverter():
 	def __init__(self, adj_list_path):
-		"""Attaches the adjacency list read from the adjacency list file
+		"""Initializes an instance of ListToMatrixConverter
 
 		Args:
 			adj_list_path: Path to the file where the adjacency list is stored
