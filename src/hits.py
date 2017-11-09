@@ -151,6 +151,8 @@ def main():
         print('map\n', index_id_map, '\n')
         print('link_matrix\n', link_matrix.todense(), '\n')
 
+    # An edge from node i to node j implies j is a friend of i
+
     h = HITS(link_matrix,users,index_id_map,is_sparse=sparse)
     h.calc_scores()
     print(h.get_auths())

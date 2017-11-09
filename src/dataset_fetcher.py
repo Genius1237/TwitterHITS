@@ -43,7 +43,7 @@ class DatasetFetcher():
 		except tweepy.RateLimitError:
 			self._logger.log('Rate limit API limit reached')
 		except Exception as e:
-			self._logger.log('API limit exception: ', e)
+			self._logger.log('API limit exception: ', repr(e))
 		else:
 			self._logger.log('Friends endpoint remaining: ', temp['resources']['friends']['/friends/list']['remaining'])
 			self._logger.log('Followers endpoint remaining: ', temp['resources']['followers']['/followers/list']['remaining'])
@@ -59,12 +59,15 @@ class DatasetFetcher():
 					self._logger.log('Sleeping for', 15 * 60, 'seconds')
 					time.sleep(15 * 60)
 				except Exception as e:
-					self._logger.log('Unexpected exception thrown: ', e)
+					self._logger.log('Unexpected exception thrown: ', repr(e))
 					self._logger.log('Sleeping for', 15 * 60, 'seconds')
 					time.sleep(15 * 60)
 				else:
 					self._logger.log('Sleeping for', max(reset_time - time.time() + 1, 1), 'seconds')
 					time.sleep(max(reset_time - time.time() + 1, 1))
+			except tweepy.TweepError as e:
+				self._logger.log('tweepy.TweepError: code:', repr(e))
+				break
 
 
 	def get_dataset(self, seed_user, friends_limit, followers_limit, limit, live_save, users_path, adj_list_path):
@@ -215,10 +218,17 @@ class DatasetFetcher():
 	def save_dataset(self, users_path, adj_list_path):
 		if users_path != '':
 			with open(users_path, mode='wb') as f:
-				pickle.dump(self._visited, f)
+				try:
+					pickle.dump(self._visited, f)
+				except Exception as e:
+					self._logger.log('adj Exception:', repr(e))
+
 		if adj_list_path != '':
 			with open(adj_list_path, mode='wb') as f:
-				pickle.dump(self._graph, f)
+				try:
+					pickle.dump(self._graph, f)
+				except Exception as e:
+					self._logger.log('dump Exception:', repr(e))
 
 class ListToMatrixConverter():
 	def __init__(self, adj_list_path):
@@ -252,22 +262,31 @@ class ListToMatrixConverter():
 	def save(self, map_path, link_matrix_path, use_sparse=False):
 		if map_path != '':
 			with open(map_path, 'wb') as f:
-				pickle.dump(self._index_id_map, f)
+				try:
+					pickle.dump(self._index_id_map, f)
+				except Exception as e:
+					self._logger.log('Exception:', repr(e))
 
 		if link_matrix_path != '':
 			with open(link_matrix_path, mode='wb') as f:
 				if use_sparse:
-					sparse.save_npz(f, sparse.csr_matrix(self._link_matrix))
+					try:
+						sparse.save_npz(f, sparse.csr_matrix(self._link_matrix))
+					except Exception as e:
+						self._logger.log('Exception:', repr(e))
 				else:
-					np.save(f, self._link_matrix)
+					try:
+						np.save(f, self._link_matrix)
+					except Exception as e:
+						self._logger.log('Exception:', repr(e))
 
 
 def main():
-	sparse = False
+	sparse = True
 
 	key = 'j5idDIRvUfwI1213Nr14Drh33'
 	secret = 'jOw1Dgt8dJlu4rPh3GeoGofnIV5VKLkZ8fOQqYk1zUsaSMJnVl'
-	seed_user = 'genius1238'
+	seed_user = 'janasmart19'
 
 	log_path = 'logs.txt'
 
@@ -279,9 +298,9 @@ def main():
 	users_temp_path = '../data/temp/users_'
 	adj_list_temp_path = '../data/temp/adj_list_'
 
-	friends_limit = 20
-	followers_limit = 20
-	limit = 10
+	friends_limit = 200
+	followers_limit = 200
+	limit = 500
 
 	logger = Logger(log_path)
 
