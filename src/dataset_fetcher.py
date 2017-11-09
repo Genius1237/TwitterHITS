@@ -7,16 +7,31 @@ import scipy.sparse as sparse
 from datetime import datetime as dt
 import sys
 
-log = True
-
 class Logger():
 	def __init__(self, log_path, print_stdout=True, sep=' ', end='\n'):
+		"""
+		Args:
+			log_path: Path to the file to write the logs to
+			print_stdout: True if the logs must be written to stdout
+			sep: string to be used to separate arguments of printing
+			end: string to be after the last argument of printing
+		"""
 		self._log_file = open(log_path, 'w')
 		self._print_stdout = print_stdout
 		self._sep = sep
 		self._end = end
 
 	def log(self, *args):
+		"""Logs whatever is present in args with current date and time
+
+		Uses instance variables self._sep for separating elements of args and
+		self._end after the last element of args. Writes to the log file
+		self._log_file. If self._print_stdout is True, logs are also written to
+		stdout
+
+		Args:
+			args: List of elements to be logged
+		"""
 		to_print = str(dt.now()) + ': '
 		for i in args:
 			to_print += self._sep + str(i)
@@ -27,10 +42,20 @@ class Logger():
 			sys.stdout.flush()
 
 	def __del__(self):
+		"""Close the log file when no references to the instance remain
+		"""
 		self._log_file.close()
 
 class DatasetFetcher():
 	def __init__(self, key, secret, logger):
+		"""Complete authentication
+
+		Args:
+			key: key to be used for authentication
+			secret: secret to be used for authentication
+			logger: An instance of Logger to be used for logging purposed by public
+			member functions
+		"""
 		auth = tweepy.AppAuthHandler(key, secret)
 		self._api = tweepy.API(auth, retry_count=5)
 		self._visited = None
@@ -38,6 +63,8 @@ class DatasetFetcher():
 		self._logger = logger
 
 	def _print_api_rem(self):
+		"""Print remaining quota for friends listing and followers listing endpoints
+		"""
 		try:
 			temp = self._api.rate_limit_status()
 		except tweepy.RateLimitError:
@@ -45,10 +72,14 @@ class DatasetFetcher():
 		except Exception as e:
 			self._logger.log('API limit exception: ', repr(e))
 		else:
-			self._logger.log('Friends endpoint remaining: ', temp['resources']['friends']['/friends/list']['remaining'])
-			self._logger.log('Followers endpoint remaining: ', temp['resources']['followers']['/followers/list']['remaining'])
+			self._logger.log('Friends endpoint remaining: ',
+				temp['resources']['friends']['/friends/list']['remaining'])
+			self._logger.log('Followers endpoint remaining: ',
+				temp['resources']['followers']['/followers/list']['remaining'])
 
 	def _handle_limit(self, cursor, friends_or_followers):
+		"""Handles rate limits given a cursor
+		"""
 		while True:
 			try:
 				yield cursor.next()
@@ -70,25 +101,28 @@ class DatasetFetcher():
 				break
 
 
-	def get_dataset(self, seed_user, friends_limit, followers_limit, limit, live_save, users_path, adj_list_path):
-		"""\
-			seed_user is the id/screen_name/name
-			of the user to start the bfs with
+	def get_dataset(
+		self, seed_user, friends_limit, followers_limit, limit, live_save,
+		users_path, adj_list_path):
+		"""Obtain the dataset
 
-			friends_limit is the number of friends to consider for each user
+			Args:
+			seed_user: id/screen_name/name of the user to start the bfs with
+			friends_limit: Maximum number of friends to consider for each user
+			followers_limit: Maximum number of followers to consider for each user
+			limit: Maximum number of users to find friends and followers of
+			live_save: Whether to save computed data frequently
+			users_path: Path to the file where the users info will be stored
 
-			followers_limit is the number of followers to consider for each user
-
-			limit_on can be either explored or visited
-
-			limit is the limit corresponding to limit_on
+			adj_list_path:
 		"""
-		# three possible states -
+
+		# Each node has three possible states -
 		# unvisited, visited but not explored, explored
 
 		# each key-value pair is of the form
 		# id: {'name': '', 'screen_name': ''}
-		# servers two purposes -
+		# serves two purposes -
 		#   ids in this are those that are visited
 		#   stores user info corresponding to each id
 		self._visited = {}
@@ -102,7 +136,7 @@ class DatasetFetcher():
 		# but not yet explored
 		boundary = queue.Queue()
 
-		# initialise
+		# Initialise
 		seed_user = self._api.get_user(seed_user)
 		self._visited[seed_user.id] = {
 			'name': seed_user.name,
@@ -114,19 +148,23 @@ class DatasetFetcher():
 		}
 		boundary.put(seed_user.id)
 
-		# get the graph
+		# Explore users as long as the total number of visited users is less than
+		# limit
 		should_break = False
 		live_save_suffix = 0
 		while True:
 			self._logger.log('')
 			self._print_api_rem()
 			user_id = boundary.get()
-			self._logger.log('Selected:', self._visited[user_id]['screen_name'], ',', self._visited[user_id]['name'], ',', user_id)
+			self._logger.log('Selected:', self._visited[user_id]['screen_name'],
+				',', self._visited[user_id]['name'], ',', user_id)
 
-			# friends
+			# Find friends
 			self._logger.log('Finding friends..')
 			cnt = 0
-			for friend in self._handle_limit(tweepy.Cursor(self._api.friends, user_id=user_id).items(friends_limit), 'friends'):
+			for friend in self._handle_limit(
+				tweepy.Cursor(self._api.friends, user_id=user_id).items(friends_limit), 'friends'):
+
 				cnt += 1
 				self._graph[user_id]['friends'].append(friend.id)
 				if friend.id not in self._visited:
@@ -147,10 +185,12 @@ class DatasetFetcher():
 			if should_break:
 				break
 
-			# followers
+			# Find followers
 			self._logger.log('Finding followers..')
 			cnt = 0
-			for follower in self._handle_limit(tweepy.Cursor(self._api.followers, user_id=user_id).items(followers_limit), 'followers'):
+			for follower in self._handle_limit(
+				tweepy.Cursor(self._api.followers, user_id=user_id).items(followers_limit), 'followers'):
+
 				cnt += 1
 				self._graph[user_id]['followers'].append(follower.id)
 				if follower.id not in self._visited:
@@ -175,20 +215,27 @@ class DatasetFetcher():
 
 			if should_break:
 				break
-			
+
+		# Number of visited users is now equal to limit. Now find friends and
+		# followers of visited but unexplored users. Among these, consider only
+		# those that have already been visited, thus not increasing the number
+		# of users visited
 		self._logger.log('')
 		self._logger.log('Boundary..')
 		while not boundary.empty():
 			self._logger.log('')
 			self._print_api_rem()
 			user_id = boundary.get()
-			self._logger.log('Selected:', self._visited[user_id]['screen_name'], ',', self._visited[user_id]['name'], ',', user_id)
+			self._logger.log('Selected:', self._visited[user_id]['screen_name'],
+				',', self._visited[user_id]['name'], ',', user_id)
 
-			# friends
+			# Find friends
 			self._logger.log('Finding friends..')
 			cnt = 0
 			cnt2 = 0
-			for friend in self._handle_limit(tweepy.Cursor(self._api.friends, user_id=user_id).items(friends_limit), 'friends'):
+			for friend in self._handle_limit(
+				tweepy.Cursor(self._api.friends, user_id=user_id).items(friends_limit), 'friends'):
+
 				cnt += 1
 				if friend.id in self._visited:
 					cnt2 += 1
@@ -196,11 +243,13 @@ class DatasetFetcher():
 			self._logger.log('Found', cnt, 'friends')
 			self._logger.log('Used', cnt2, 'friends')
 
-			# followers
+			# Find followers
 			self._logger.log('Finding followers..')
 			cnt = 0
 			cnt2 = 0
-			for follower in self._handle_limit(tweepy.Cursor(self._api.followers, user_id=user_id).items(followers_limit), 'followers'):
+			for follower in self._handle_limit(
+				tweepy.Cursor(self._api.followers, user_id=user_id).items(followers_limit), 'followers'):
+
 				cnt += 1
 				if follower.id in self._visited:
 					cnt2 += 1
@@ -210,12 +259,19 @@ class DatasetFetcher():
 
 			self._logger.log('Latest save suffix: ', live_save_suffix % 2)
 			if live_save:
-				self.save_dataset(users_path + str(live_save_suffix % 2), adj_list_path + str(live_save_suffix % 2))
+				self.save_dataset(users_path + str(live_save_suffix % 2),
+					adj_list_path + str(live_save_suffix % 2))
 			live_save_suffix += 1
 
 			self._logger.log('Queue size:', boundary.qsize())
 
 	def save_dataset(self, users_path, adj_list_path):
+		"""Save the dataset obtained by get_dataset
+
+		Args:
+			users_path: Path to the file where users info will be stored
+			adj_list_path: Path to the file where the adjacency list will be stored
+		"""
 		if users_path != '':
 			with open(users_path, mode='wb') as f:
 				try:
@@ -232,17 +288,26 @@ class DatasetFetcher():
 
 class ListToMatrixConverter():
 	def __init__(self, adj_list_path):
+		"""Attaches the adjacency list read from the adjacency list file
+
+		Args:
+			adj_list_path: Path to the file where the adjacency list is stored
+		"""
 		with open(adj_list_path, 'rb') as f:
 			self._adj_list = pickle.load(f)
 		self._link_matrix = None
 		self._index_id_map = None
 
 	def convert(self):
-		# put contents of self._adj_list in a matrix
+		"""Use the adjacency list to create the link matrix and a dictionary that
+		maps the index in the link matrix to a user id
+		"""
+
+		# Put contents of self._adj_list in a matrix
 		size = len(self._adj_list)
 		self._link_matrix = np.zeros((size, size), dtype=np.int)
 
-		# create map to save some time
+		# Create map to save some time
 		id_index_map = {}
 		index = 0
 		for user_id in self._adj_list:
@@ -260,6 +325,14 @@ class ListToMatrixConverter():
 			self._index_id_map[id_index_map[i]] = i
 
 	def save(self, map_path, link_matrix_path, use_sparse=False):
+		"""Saves the map and link matrix created using the convert function
+
+		Args:
+			map_path: Path to the file where the map from link matrix index to
+			user id is to be stored
+			link_matrix_path: Path to the file where the link matrix is to be stored
+			use_sparse: True if the link matrix is to be stored as a sparse matrix
+		"""
 		if map_path != '':
 			with open(map_path, 'wb') as f:
 				try:
@@ -304,14 +377,17 @@ def main():
 
 	logger = Logger(log_path)
 
+	# Fetch the dataset, store info of all users and store the adjacency list
 	app = DatasetFetcher(key, secret, logger)
 	logger.log('Obtaining dataset..')
-	app.get_dataset(seed_user, friends_limit, followers_limit, limit, True, users_temp_path, adj_list_temp_path)
+	app.get_dataset(
+		seed_user, friends_limit, followers_limit, limit, True, users_temp_path,
+		adj_list_temp_path)
 	logger.log('Dataset obtained')
 	app.save_dataset(users_path, adj_list_path)
 
-	# adjacency list created by dataset fetcher is used to generate the link matrix
-	# which is then saved
+	# Create the link matrix and map using the adjacency list created
+	# previously and save them
 	c = ListToMatrixConverter(adj_list_path)
 	c.convert()
 	c.save(map_path, link_matrix_path, use_sparse=sparse)
