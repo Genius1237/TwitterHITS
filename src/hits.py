@@ -136,7 +136,7 @@ class DatasetReader():
 		pass
 
 	def read_users(self, users_path):
-		"""Return the dictionary object (stored in a file) containing details of
+		"""Returns the dictionary (stored in a file) containing details of
 		all users
 
 		Args:
@@ -147,7 +147,7 @@ class DatasetReader():
 		return users
 
 	def read_map(self, map_path):
-		"""Return the dictionary object (stored in a file) that represents a map
+		"""Returns the dictionary (stored in a file) that represents a map
 		from the link matrix index to user id
 
 		Args:
@@ -158,7 +158,7 @@ class DatasetReader():
 		return index_id_map
 
 	def read_link_matrix(self, link_matrix_path, is_sparse=False):
-		"""Return the array (stored in a file) that represents the link matrix
+		"""Returns the array (stored in a file) that represents the link matrix
 
 		Args:
 			link_matrix_path: Path to the file where the link matrix is stored
