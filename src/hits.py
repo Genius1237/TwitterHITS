@@ -54,8 +54,8 @@ class HITS():
                 if max_score != 0:
                     self.__hubs = self.__hubs / max_score
 
-                self.plot_graph(self.__hubs,self.__adj_graph,self.__names,0)
-                self.plot_graph(self.__auths,self.__adj_graph,self.__names,1)
+                #self.plot_graph(self.__hubs,self.__adj_graph,self.__names,0)
+                #self.plot_graph(self.__auths,self.__adj_graph,self.__names,1)
 
                 if ((abs(self.__hubs - hubs_old)) < epsilon_matrix).all():
                     break
@@ -158,7 +158,7 @@ def main():
     x = h.get_hubs()
     y = h.get_sample_adj_matrix()
     z = h.get_names()
-    #h.plot_graph(x,y,z)
+    h.plot_graph(x,y,z)
 
 if __name__ == '__main__':
     main()
