@@ -8,6 +8,10 @@ from datetime import datetime as dt
 import sys
 
 class Logger():
+	"""An instance of Logger can be used as a simple and intuitive interface
+	for logging
+	"""
+
 	def __init__(self, log_path, print_stdout=True, sep=' ', end='\n'):
 		"""Initializes an instance of Logger
 
@@ -48,6 +52,10 @@ class Logger():
 		self._log_file.close()
 
 class DatasetFetcher():
+	"""An instance of DatasetFetcher is used to obtain the dataset from
+	the internet
+	"""
+
 	def __init__(self, key, secret, logger):
 		"""Initializes an instance of DatasetFetcher
 
@@ -288,6 +296,11 @@ class DatasetFetcher():
 					self._logger.log('dump Exception:', repr(e))
 
 class ListToMatrixConverter():
+	"""An instance of ListToMatrixConverter is used to convert the data obtained
+	by the dataset fetcher from adjacency list form to a matrix form (and an
+	index-to-userid map)
+	"""
+
 	def __init__(self, adj_list_path):
 		"""Initializes an instance of ListToMatrixConverter
 

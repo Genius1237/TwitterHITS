@@ -8,6 +8,10 @@ from dataset_fetcher import ListToMatrixConverter
 debug = False
 
 class HITS():
+	"""An instance of HITS is used to model the idea of hubs and authorities
+	and execute the corresponding algorithm
+	"""
+
 	def __init__(self, link_matrix, users, index_id_map, is_sparse=False):
 		"""
 		Initializes an instance of HITS
@@ -16,7 +20,7 @@ class HITS():
 			link_matrix: The link matrix
 			users: Details of all users
 			index_id_map: Dictionary representing a map from link matrix index
-			to user id 
+			to user id
 			is_sparse: True if the links matrix is a sparse matrix
 		"""
 		self.__is_sparse = is_sparse
@@ -73,15 +77,23 @@ class HITS():
 					break
 
 	def get_hubs(self):
+		"""Returns the hubbiness for each node (user)
+		"""
 		return self.__hubs
 
 	def get_auths(self):
+		"""Returns the authority for each node (user)
+		"""
 		return self.__auths
 
 	def get_names(self):
+		"""Returns the screen name of each user
+		"""
 		return self.__names
 
 	def get_sample_adj_matrix(self):
+		"""Returns a sample adjacency matrix
+		"""
 		sample_matrix = self.__adj_graph[0:self.__size, 0:self.__size]
 		return Graph.Adjacency(sample_matrix)
 
@@ -114,6 +126,10 @@ class HITS():
 
 
 class DatasetReader():
+	"""An instance of DatasetReader is used to read different files from the
+	dataset
+	"""
+
 	def __init__(self):
 		"""Initializes an instance of DatasetReader
 		"""

@@ -1,4 +1,4 @@
 env
-src/temp.py
 src/logs.txt
 src/__pycache__
+src/print_dataset.py
