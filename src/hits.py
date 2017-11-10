@@ -32,6 +32,8 @@ class HITS():
 		self.__size = 30
 		self.__adj_graph = Graph.Adjacency((link_matrix[0:self.__size, 0:self.__size]>0).tolist())
 		self.__names = [users[index_id_map[i]]['screen_name'] for i in range(0,self.__size)]
+		self.all_hubs = []
+		self.all_auths = []
 
 	def calc_scores(self):
 		"""Calculates hubbiness and authority
@@ -47,16 +49,19 @@ class HITS():
 				max_score = self.__auths.max(axis=0)
 				if max_score != 0:
 					self.__auths = self.__auths / max_score
+				self.all_auths.append(self.__auths.tolist())
 
 				self.__hubs = self.__link_matrix * self.__auths
 				max_score = self.__hubs.max(axis=0)
 				if max_score != 0:
 					self.__hubs = self.__hubs / max_score
+				self.all_hubs.append(self.__hubs.tolist())
 
 				if ((abs(self.__hubs - hubs_old)) < epsilon_matrix).all():
 					break
 
 		else:
+			cnt = 0
 			while True:
 				hubs_old = self.__hubs
 
@@ -64,17 +69,26 @@ class HITS():
 				max_score = self.__auths.max(axis=0)
 				if max_score != 0:
 					self.__auths = self.__auths / max_score
+				self.all_auths.append(self.__auths)
 
 				self.__hubs = np.matmul(self.__link_matrix, self.__auths)
 				max_score = self.__hubs.max(axis=0)
 				if max_score != 0:
 					self.__hubs = self.__hubs / max_score
+				self.all_hubs.append(self.__hubs)
 
 				#self.plot_graph(self.__hubs,self.__adj_graph,self.__names,0)
 				#self.plot_graph(self.__auths,self.__adj_graph,self.__names,1)
-
+				cnt += 1
 				if ((abs(self.__hubs - hubs_old)) < epsilon_matrix).all():
 					break
+			print(cnt)
+
+	def return_all_hubs(self):
+		return self.all_hubs
+
+	def return_all_auths(self):
+		return self.all_auths
 
 	def get_hubs(self):
 		"""Returns the hubbiness for each node (user)
@@ -123,7 +137,6 @@ class HITS():
 		visual_style["margin"] = 250
 		visual_style["edge_width"] = 4
 		plot(g, **visual_style)
-
 
 class DatasetReader():
 	"""An instance of DatasetReader is used to read different files from the
@@ -192,12 +205,17 @@ def main():
 
 	h = HITS(link_matrix,users,index_id_map,is_sparse=sparse)
 	h.calc_scores()
-	print(h.get_auths())
-	print(h.get_hubs())
-	x = h.get_hubs()
-	y = h.get_sample_adj_matrix()
-	z = h.get_names()
-	h.plot_graph(x,y,z)
 
+	h.plot_graph(h.get_hubs(),h.get_sample_adj_matrix(),h.get_names(),0)
+	h.plot_graph(h.get_auths(),h.get_sample_adj_matrix(),h.get_names(),1)
+
+	x = h.return_all_hubs()
+""" for i in x:
+		h.plot_graph(i,h.get_sample_adj_matrix(),h.get_names(),0)
+
+	y = h.return_all_auths()
+	for i in y:
+		h.plot_graph(i,h.get_sample_adj_matrix(),h.get_names(),1)
+"""
 if __name__ == '__main__':
 	main()
