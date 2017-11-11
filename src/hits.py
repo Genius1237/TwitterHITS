@@ -4,6 +4,7 @@ import time
 import pickle
 from igraph import *
 from dataset_fetcher import ListToMatrixConverter
+import matplotlib.pyplot as plt
 
 debug = False
 
@@ -35,7 +36,7 @@ class HITS():
 		self.all_hubs = []
 		self.all_auths = []
 
-	def calc_scores(self):
+	def calc_scores(self, show_iters=False):
 		"""Calculates hubbiness and authority
 		"""
 		epsilon = 0.001
@@ -61,7 +62,6 @@ class HITS():
 					break
 
 		else:
-			cnt = 0
 			while True:
 				hubs_old = self.__hubs
 
@@ -77,17 +77,17 @@ class HITS():
 					self.__hubs = self.__hubs / max_score
 				self.all_hubs.append(self.__hubs)
 
-				#self.plot_graph(self.__hubs,self.__adj_graph,self.__names,0)
-				#self.plot_graph(self.__auths,self.__adj_graph,self.__names,1)
-				cnt += 1
+				if show_iters:
+					self.plot_graph(self.__hubs,self.__adj_graph,self.__names,0)
+					self.plot_graph(self.__auths,self.__adj_graph,self.__names,1)
+
 				if ((abs(self.__hubs - hubs_old)) < epsilon_matrix).all():
 					break
-			print(cnt)
 
-	def return_all_hubs(self):
+	def get_all_hubs(self):
 		return self.all_hubs
 
-	def return_all_auths(self):
+	def get_all_auths(self):
 		return self.all_auths
 
 	def get_hubs(self):
@@ -204,16 +204,38 @@ def main():
 		print('link_matrix\n', link_matrix.todense(), '\n')
 
 	h = HITS(link_matrix,users,index_id_map,is_sparse=sparse)
-	h.calc_scores()
+	h.calc_scores(show_iters=False)
 
-	h.plot_graph(h.get_hubs(),h.get_sample_adj_matrix(),h.get_names(),0)
-	h.plot_graph(h.get_auths(),h.get_sample_adj_matrix(),h.get_names(),1)
+	# Show after all iterations
+	#h.plot_graph(h.get_hubs(),h.get_sample_adj_matrix(),h.get_names(),0)
+	#h.plot_graph(h.get_auths(),h.get_sample_adj_matrix(),h.get_names(),1)
 
-	x = h.return_all_hubs()
-""" for i in x:
+	# Print graphs
+	all_hubs = h.get_all_hubs()
+	all_auths = h.get_all_auths()
+
+	print(len(all_hubs))
+	fig, ax = plt.subplots(nrows=len(all_hubs), ncols=1)
+	idx = 0
+	for row in ax:
+		row.plot(np.arange(1, len(all_hubs[idx]) + 1), all_hubs[idx])
+		idx += 1
+	plt.show()
+
+	fig, ax = plt.subplots(nrows=len(all_auths), ncols=1)
+	idx = 0
+	for row in ax:
+		row.plot(np.arange(1, len(all_auths[idx]) + 1), all_auths[idx])
+		idx += 1
+	plt.show()
+
+
+"""
+	x = h.get_all_hubs()
+	for i in x:
 		h.plot_graph(i,h.get_sample_adj_matrix(),h.get_names(),0)
 
-	y = h.return_all_auths()
+	y = h.get_all_auths()
 	for i in y:
 		h.plot_graph(i,h.get_sample_adj_matrix(),h.get_names(),1)
 """
