@@ -369,7 +369,6 @@ class ListToMatrixConverter():
 
 
 def main():
-	sparse = False
 
 	key = 'j5idDIRvUfwI1213Nr14Drh33'
 	secret = 'jOw1Dgt8dJlu4rPh3GeoGofnIV5VKLkZ8fOQqYk1zUsaSMJnVl'
@@ -380,7 +379,8 @@ def main():
 	users_path = '../data/users'
 	adj_list_path = '../data/adj_list'
 	map_path = '../data/map'
-	link_matrix_path = '../data/link_matrix'
+	dense_link_matrix_path = '../data/dense_link_matrix'
+	sparse_link_matrix_path = '../data/sparse_link_matrix'
 
 	users_temp_path = '../data/temp/users_'
 	adj_list_temp_path = '../data/temp/adj_list_'
@@ -404,7 +404,11 @@ def main():
 	# previously and save them
 	c = ListToMatrixConverter(adj_list_path)
 	c.convert()
-	c.save(map_path, link_matrix_path, use_sparse=sparse)
+	c.save(map_path, dense_link_matrix_path, use_sparse=False)
+
+	c = ListToMatrixConverter(adj_list_path)
+	c.convert()
+	c.save(map_path, sparse_link_matrix_path, use_sparse=True)
 	logger.log('Dataset Saved')
 
 if __name__ == '__main__':

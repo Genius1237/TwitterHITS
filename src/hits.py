@@ -5,6 +5,7 @@ import pickle
 from igraph import *
 from dataset_fetcher import ListToMatrixConverter
 import matplotlib.pyplot as plt
+import matplotlib.patches as mp
 
 debug = False
 
@@ -26,23 +27,22 @@ class HITS():
 		"""
 		self.__is_sparse = is_sparse
 		self.__link_matrix = link_matrix
-		self.__link_matrix_tr = self.__link_matrix.transpose()
+		self.__link_matrix_tr = link_matrix.transpose()	
 		self.__n = self.__link_matrix.shape[0]
-		self.__hubs = np.ones((self.__n,1))
-		self.__auths = np.ones((self.__n,1))
+		self.__hubs = np.ones(self.__n)
+		self.__auths = np.ones(self.__n)
 		self.__size = 30
-		self.__adj_graph = Graph.Adjacency((link_matrix[0:self.__size, 0:self.__size]>0).tolist())
 		self.__names = [users[index_id_map[i]]['screen_name'] for i in range(0,self.__size)]
+		self.__index_id_map = index_id_map
+		self.__users = users
 		self.all_hubs = []
 		self.all_auths = []
 
-	def calc_scores(self, show_iters=False):
+	def calc_scores(self, epsilon=1e-4):
 		"""Calculates hubbiness and authority
 		"""
-		epsilon = 0.001
-		epsilon_matrix = epsilon * (np.ones((self.__n,1)).all())
-
-		if self.__is_sparse:
+		epsilon_matrix = epsilon * np.ones(self.__n)
+		if self.__is_sparse:			
 			while True:
 				hubs_old = self.__hubs
 
@@ -50,13 +50,13 @@ class HITS():
 				max_score = self.__auths.max(axis=0)
 				if max_score != 0:
 					self.__auths = self.__auths / max_score
-				self.all_auths.append(self.__auths.tolist())
+				self.all_auths.append(self.__auths)
 
 				self.__hubs = self.__link_matrix * self.__auths
 				max_score = self.__hubs.max(axis=0)
 				if max_score != 0:
 					self.__hubs = self.__hubs / max_score
-				self.all_hubs.append(self.__hubs.tolist())
+				self.all_hubs.append(self.__hubs)
 
 				if ((abs(self.__hubs - hubs_old)) < epsilon_matrix).all():
 					break
@@ -65,29 +65,29 @@ class HITS():
 			while True:
 				hubs_old = self.__hubs
 
-				self.__auths = np.matmul(self.__link_matrix_tr, hubs_old)
+				self.__auths = np.dot(self.__link_matrix_tr, hubs_old)
 				max_score = self.__auths.max(axis=0)
 				if max_score != 0:
 					self.__auths = self.__auths / max_score
 				self.all_auths.append(self.__auths)
 
-				self.__hubs = np.matmul(self.__link_matrix, self.__auths)
+				self.__hubs = np.dot(self.__link_matrix, self.__auths)
 				max_score = self.__hubs.max(axis=0)
 				if max_score != 0:
 					self.__hubs = self.__hubs / max_score
 				self.all_hubs.append(self.__hubs)
 
-				if show_iters:
-					self.plot_graph(self.__hubs,self.__adj_graph,self.__names,0)
-					self.plot_graph(self.__auths,self.__adj_graph,self.__names,1)
-
 				if ((abs(self.__hubs - hubs_old)) < epsilon_matrix).all():
 					break
 
 	def get_all_hubs(self):
+		"""Returns the hubbiness score for each user for each iteration
+		"""
 		return self.all_hubs
 
 	def get_all_auths(self):
+		"""Returns the authority score for each user for each iteration
+		"""
 		return self.all_auths
 
 	def get_hubs(self):
@@ -105,15 +105,13 @@ class HITS():
 		"""
 		return self.__names
 
-	def get_sample_adj_matrix(self):
-		"""Returns a sample adjacency matrix
-		"""
-		sample_matrix = self.__adj_graph[0:self.__size, 0:self.__size]
-		return Graph.Adjacency(sample_matrix)
-
-	def plot_graph(self,x,g,names,c):
+	def plot_graph(self, x, names, c):
 		"""Plots the graph
 		"""
+		if self.__is_sparse:
+			g = Graph.Adjacency((self.__link_matrix[0:self.__size, 0:self.__size]).toarray().tolist())
+		else:
+			g = Graph.Adjacency((self.__link_matrix[0:self.__size, 0:self.__size]).tolist())
 		g.vs["name"] = names
 		g.vs["attr"] = ["%.3f" % k for k in x]
 
@@ -137,6 +135,40 @@ class HITS():
 		visual_style["margin"] = 250
 		visual_style["edge_width"] = 4
 		plot(g, **visual_style)
+
+	def plot_stats(self):
+		screen_name_index_map = {}
+		for key in self.__index_id_map:
+			screen_name_index_map[self.__users[self.__index_id_map[key]]['screen_name']] = key
+		
+		cands = ['austinnotduncan', 'str_mape', 'KKRiders', 'aidanf123', 'MKBHD']
+		colors = ['green', 'cyan', 'magenta', 'blue', 'brown']
+		all_hubs = np.array(self.all_hubs)
+		all_auths = np.array(self.all_auths)
+
+		plt.figure(1, figsize=(12, 7))
+		ax = plt.gca()
+		ax.set_xlabel("Iterations")
+		ax.set_ylabel("Hubbiness Score")
+		legend_handles = []
+		for i in range(len(cands)):
+			legend_handles.append(mp.Patch(label=cands[i], color=colors[i]))
+			ax.plot(np.arange(1, all_hubs.shape[0] + 1), all_hubs[:, screen_name_index_map[cands[i]]], color=colors[i])
+		ax.legend(handles=legend_handles)
+		ax.set_title("Change in hubbiness score with increasing iterations")
+		plt.savefig('hubs.png')
+
+		plt.figure(2, figsize=(12, 7))
+		ax = plt.gca()
+		ax.set_xlabel("Iterations")
+		ax.set_ylabel("Authority Score")
+		legend_handles = []
+		for i in range(len(cands)):
+			legend_handles.append(mp.Patch(label=cands[i], color=colors[i]))
+			ax.plot(np.arange(1, all_auths.shape[0] + 1), all_auths[:, screen_name_index_map[cands[i]]], color=colors[i])
+		ax.legend(handles=legend_handles)
+		ax.set_title("Change in authority score with increasing iterations")
+		plt.savefig('auths.png')
 
 class DatasetReader():
 	"""An instance of DatasetReader is used to read different files from the
@@ -184,12 +216,20 @@ class DatasetReader():
 				link_matrix = np.load(f)
 		return link_matrix
 
+
 def main():
 	sparse = False
+	epsilon = 1e-1
+	show_iters = True
 
 	users_path = '../data/users'
 	map_path = '../data/map'
-	link_matrix_path = '../data/link_matrix'
+	sparse_link_matrix_path = '../data/sparse_link_matrix'
+	dense_link_matrix_path = '../data/dense_link_matrix'
+	if sparse:
+		link_matrix_path = sparse_link_matrix_path
+	else:
+		link_matrix_path = dense_link_matrix_path
 
 	# Load the stored data into objects
 	r = DatasetReader()
@@ -197,47 +237,24 @@ def main():
 	index_id_map = r.read_map(map_path)
 	link_matrix = r.read_link_matrix(link_matrix_path, is_sparse=sparse)
 
-	if debug:
-		np.set_printoptions(threshold=np.inf)
-		print('users\n', users, '\n')
-		print('map\n', index_id_map, '\n')
-		print('link_matrix\n', link_matrix.todense(), '\n')
+	# Run the algorithm
+	h = HITS(link_matrix, users, index_id_map, is_sparse=sparse)
+	h.calc_scores(epsilon=epsilon)
 
-	h = HITS(link_matrix,users,index_id_map,is_sparse=sparse)
-	h.calc_scores(show_iters=False)
+	if show_iters:
+		x = h.get_all_hubs()
+		for i in x:
+			h.plot_graph(i, h.get_names(),0)
 
-	# Show after all iterations
-	#h.plot_graph(h.get_hubs(),h.get_sample_adj_matrix(),h.get_names(),0)
-	#h.plot_graph(h.get_auths(),h.get_sample_adj_matrix(),h.get_names(),1)
-
+		y = h.get_all_auths()
+		for i in y:
+			h.plot_graph(i, h.get_names(),1)
+	else:
+		h.plot_graph(h.get_hubs(), h.get_names(),0)
+		h.plot_graph(h.get_auths(), h.get_names(),1)
+	
 	# Print graphs
-	all_hubs = h.get_all_hubs()
-	all_auths = h.get_all_auths()
+	h.plot_stats()
 
-	print(len(all_hubs))
-	fig, ax = plt.subplots(nrows=len(all_hubs), ncols=1)
-	idx = 0
-	for row in ax:
-		row.plot(np.arange(1, len(all_hubs[idx]) + 1), all_hubs[idx])
-		idx += 1
-	plt.show()
-
-	fig, ax = plt.subplots(nrows=len(all_auths), ncols=1)
-	idx = 0
-	for row in ax:
-		row.plot(np.arange(1, len(all_auths[idx]) + 1), all_auths[idx])
-		idx += 1
-	plt.show()
-
-
-"""
-	x = h.get_all_hubs()
-	for i in x:
-		h.plot_graph(i,h.get_sample_adj_matrix(),h.get_names(),0)
-
-	y = h.get_all_auths()
-	for i in y:
-		h.plot_graph(i,h.get_sample_adj_matrix(),h.get_names(),1)
-"""
 if __name__ == '__main__':
 	main()
