@@ -6,6 +6,7 @@ from igraph import *
 from dataset_fetcher import ListToMatrixConverter
 import matplotlib.pyplot as plt
 import matplotlib.patches as mp
+import time
 
 debug = False
 
@@ -45,6 +46,7 @@ class HITS():
 		if self.__is_sparse:			
 			while True:
 				hubs_old = self.__hubs
+				auths_old = self.__auths
 
 				self.__auths = self.__link_matrix_tr * hubs_old
 				max_score = self.__auths.max(axis=0)
@@ -58,12 +60,13 @@ class HITS():
 					self.__hubs = self.__hubs / max_score
 				self.all_hubs.append(self.__hubs)
 
-				if ((abs(self.__hubs - hubs_old)) < epsilon_matrix).all():
+				if (((abs(self.__hubs - hubs_old)) < epsilon_matrix).all()) and (((abs(self.__auths - auths_old)) < epsilon_matrix).all()):
 					break
 
 		else:
 			while True:
 				hubs_old = self.__hubs
+				auths_old = self.__auths
 
 				self.__auths = np.dot(self.__link_matrix_tr, hubs_old)
 				max_score = self.__auths.max(axis=0)
@@ -77,7 +80,7 @@ class HITS():
 					self.__hubs = self.__hubs / max_score
 				self.all_hubs.append(self.__hubs)
 
-				if ((abs(self.__hubs - hubs_old)) < epsilon_matrix).all():
+				if (((abs(self.__hubs - hubs_old)) < epsilon_matrix).all()) and (((abs(self.__auths - auths_old)) < epsilon_matrix).all()):
 					break
 
 	def get_all_hubs(self):
@@ -141,7 +144,7 @@ class HITS():
 		for key in self.__index_id_map:
 			screen_name_index_map[self.__users[self.__index_id_map[key]]['screen_name']] = key
 		
-		cands = ['austinnotduncan', 'str_mape', 'KKRiders', 'aidanf123', 'MKBHD']
+		cands = ['austinnotduncan', 'str_mape', 'LeoDiCaprio', 'aidanf123', 'MKBHD']
 		colors = ['green', 'cyan', 'magenta', 'blue', 'brown']
 		all_hubs = np.array(self.all_hubs)
 		all_auths = np.array(self.all_auths)
@@ -156,7 +159,7 @@ class HITS():
 			ax.plot(np.arange(1, all_hubs.shape[0] + 1), all_hubs[:, screen_name_index_map[cands[i]]], color=colors[i])
 		ax.legend(handles=legend_handles)
 		ax.set_title("Change in hubbiness score with increasing iterations")
-		plt.savefig('hubs.png')
+		plt.show()
 
 		plt.figure(2, figsize=(12, 7))
 		ax = plt.gca()
@@ -168,7 +171,7 @@ class HITS():
 			ax.plot(np.arange(1, all_auths.shape[0] + 1), all_auths[:, screen_name_index_map[cands[i]]], color=colors[i])
 		ax.legend(handles=legend_handles)
 		ax.set_title("Change in authority score with increasing iterations")
-		plt.savefig('auths.png')
+		plt.show()
 
 class DatasetReader():
 	"""An instance of DatasetReader is used to read different files from the
@@ -218,9 +221,9 @@ class DatasetReader():
 
 
 def main():
-	sparse = False
-	epsilon = 1e-1
-	show_iters = True
+	sparse = True
+	epsilon = 1e-10
+	show_iters = False
 
 	users_path = '../data/users'
 	map_path = '../data/map'
@@ -240,7 +243,7 @@ def main():
 	# Run the algorithm
 	h = HITS(link_matrix, users, index_id_map, is_sparse=sparse)
 	h.calc_scores(epsilon=epsilon)
-
+	
 	if show_iters:
 		x = h.get_all_hubs()
 		for i in x:
