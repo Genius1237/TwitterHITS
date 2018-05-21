@@ -9,3 +9,11 @@ Usage:
 1. Ensure the working directory is the top-level directory of this project
 2. Install the required packages using "pip3 install -r requirements.txt"
 3. Change working directory to "src" and then use "python3 hits.py" 
+
+Info:
+Applies the HITS (Hyperlink-Induced Topic Search) algorithm on twitter users. 
+Inlinks are people who follow a use
+Outlinks are the people that are followed by the user
+
+Sources:
+Kleinberg, Jon (December 1999). "Hubs, Authorities, and Communities". Cornell University
